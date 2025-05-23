@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <widget class="QPushButton" name="selectFileButton">
+     <property name="text">
+      <string>Select ICS File</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="searchBar">
+     <property name="placeholderText">
+      <string>Search Entries...</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="monthComboBox">
+     <property name="currentText">
+      <string>Select Month</string>
+     </property>
+     <item>
+      <property name="text">
+       <string>January</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>February</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>March</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>April</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>May</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>June</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>July</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>August</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>September</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>October</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>November</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>December</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QLineEdit" name="salaryPerHour">
+     <property name="text">
+      <string>160</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="generateCsvButton">
+     <property name="text">
+      <string>Generate CSV</string>
+     </property>
+    </widget>
+    <widget class="QTextEdit" name="csvPreview">
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </layout>
+  </widget>
+  <menuBar>
+   <menu name="menuFile">
+    <action name="actionExit">
+     <property name="text">
+      <string>Exit</string>
+     </property>
+    </action>
+   </menu>
+  </menuBar>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
