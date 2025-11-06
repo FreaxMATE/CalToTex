@@ -1,0 +1,15 @@
+# Personal and Banking Information Configuration
+# Copy this file to config.txt and edit with your personal details
+
+[Personal Information]
+name=John Doe
+address_line1=Street Address 123
+address_line2=12345 City Name
+address_line3=Country
+
+[Banking Information]
+bank_name=Bank Name
+clearing_number=1234-5
+account_number=123 456 789-0
+iban=XX00 0000 0000 0000 0000 0000
+bic=XXXXXXXX

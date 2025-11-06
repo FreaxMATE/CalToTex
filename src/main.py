@@ -10,6 +10,7 @@ from subprocess import run, CalledProcessError
 import pandas as pd
 import sys
 from PyQt6.QtWidgets import QCheckBox, QGroupBox
+import configparser
 
 
 class MainWindow(QMainWindow):
@@ -29,6 +30,10 @@ class MainWindow(QMainWindow):
         # Initialize class variables
         self.entries = []  # To store all parsed entries
         self.filtered_entries = []  # To store filtered entries
+        
+        # Load personal and banking information from config
+        self.config_info = self.load_config()
+        
         print("MainWindow initialized.")  # Debug statement
         self.init_ui()
 
@@ -77,9 +82,26 @@ class MainWindow(QMainWindow):
         self.preview_area.setReadOnly(True)
         left_layout.addWidget(self.preview_area)
 
-        self.save_button = QPushButton("Save")
-        self.save_button.clicked.connect(self.save_files)  # Save files when clicked
-        left_layout.addWidget(self.save_button)
+        # Add save buttons in a horizontal layout
+        save_buttons_layout = QHBoxLayout()
+        
+        self.save_csv_button = QPushButton("Save CSV")
+        self.save_csv_button.clicked.connect(self.save_csv)
+        save_buttons_layout.addWidget(self.save_csv_button)
+        
+        self.save_tex_button = QPushButton("Save TEX")
+        self.save_tex_button.clicked.connect(self.save_tex)
+        save_buttons_layout.addWidget(self.save_tex_button)
+        
+        self.save_pdf_button = QPushButton("Save PDF")
+        self.save_pdf_button.clicked.connect(self.save_pdf)
+        save_buttons_layout.addWidget(self.save_pdf_button)
+        
+        left_layout.addLayout(save_buttons_layout)
+        
+        self.save_all_button = QPushButton("Save All")
+        self.save_all_button.clicked.connect(self.save_all)
+        left_layout.addWidget(self.save_all_button)
 
         # Add left layout to the main layout
         self.layout.addLayout(left_layout)
@@ -104,6 +126,41 @@ class MainWindow(QMainWindow):
         self.layout.addLayout(right_layout)
         print("UI initialized.")  # Debug statement
 
+    def load_config(self):
+        """Load personal and banking information from config file."""
+        config = configparser.ConfigParser()
+        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config.txt')
+        
+        # Default values
+        default_config = {
+            'name': 'John Doe',
+            'address_line1': 'Street Address 123',
+            'address_line2': '12345 City Name',
+            'address_line3': 'Country',
+            'bank_name': 'Bank Name',
+            'clearing_number': '1234-5',
+            'account_number': '123 456 789-0',
+            'iban': 'XX00 0000 0000 0000 0000 0000',
+            'bic': 'XXXXXXXX'
+        }
+        
+        try:
+            config.read(config_path)
+            return {
+                'name': config.get('Personal Information', 'name', fallback=default_config['name']),
+                'address_line1': config.get('Personal Information', 'address_line1', fallback=default_config['address_line1']),
+                'address_line2': config.get('Personal Information', 'address_line2', fallback=default_config['address_line2']),
+                'address_line3': config.get('Personal Information', 'address_line3', fallback=default_config['address_line3']),
+                'bank_name': config.get('Banking Information', 'bank_name', fallback=default_config['bank_name']),
+                'clearing_number': config.get('Banking Information', 'clearing_number', fallback=default_config['clearing_number']),
+                'account_number': config.get('Banking Information', 'account_number', fallback=default_config['account_number']),
+                'iban': config.get('Banking Information', 'iban', fallback=default_config['iban']),
+                'bic': config.get('Banking Information', 'bic', fallback=default_config['bic'])
+            }
+        except Exception as e:
+            print(f"Error loading config file: {e}. Using default values.")
+            return default_config
+
     def toggle_month_checkboxes(self, state):
         """Enable or disable individual month checkboxes based on the 'All Months' checkbox."""
         print(f"DEBUG: State value: {state}")  # Debug statement
@@ -125,6 +182,10 @@ class MainWindow(QMainWindow):
         try:
             self.salary_per_hour = float(self.salary_input.text())
             print(f"Updated Salary Per Hour: {self.salary_per_hour}")  # Debug statement
+            # Recalculate entry salaries with the new rate
+            self.calculate_entry_salaries()
+            # Update all previews to reflect the new calculations
+            self.filter_entries()
         except ValueError:
             self.salary_per_hour = 0  # Default to 0 if input is invalid
             print("Invalid Salary Per Hour input. Defaulting to 0.")
@@ -236,19 +297,19 @@ class MainWindow(QMainWindow):
         footer = "\\end{document}"
         address = (
             "\\begin{minipage}[t]{0.45\\textwidth}\n"
-            "{John Doe}\\\\\n"
-            "123 Main Street\\\\\n"
-            "Cityville, 12345\\\\\n"
-            "Country\\\\\n"
+            f"{{{self.config_info['name']}}}\\\\\n"
+            f"{self.config_info['address_line1']}\\\\\n"
+            f"{self.config_info['address_line2']}\\\\\n"
+            f"{self.config_info['address_line3']}\\\\\n"
             "\\end{minipage}\n"
         )
         banking_details = (
             "\\begin{minipage}[t]{0.45\\textwidth}\n"
-            "Bank Name\\\\\n"
-            "Clearing number: 0000-0\\\\\n"
-            "Account number: 000 000 000-0\\\\\n"
-            "IBAN: XX00 0000 0000 0000 0000 0000\\\\\n"
-            "BIC: BANKCODE\\\\\n"
+            f"{self.config_info['bank_name']}\\\\\n"
+            f"Clearing number: {self.config_info['clearing_number']}\\\\\n"
+            f"Account number: {self.config_info['account_number']}\\\\\n"
+            f"IBAN: {self.config_info['iban']}\\\\\n"
+            f"BIC: {self.config_info['bic']}\\\\\n"
             "\\end{minipage}\n"
         )
         table_header = (
@@ -300,7 +361,7 @@ class MainWindow(QMainWindow):
         )
 
         for month, month_entries in grouped_entries.items():
-            latex += f"\\multicolumn{{5}}{{|c|}}{{\\textbf{{{month}}}}} \\\\\\\\\n\\hline\n"
+            latex += f"\\multicolumn{{5}}{{|c|}}{{\\textbf{{{month}}}}} \\\\ \n\\hline\n"
             month_total_salary = 0
             month_total_hours = 0
 
@@ -313,7 +374,7 @@ class MainWindow(QMainWindow):
 
             latex += (
             f"\\hline\n\\multicolumn{{3}}{{|r|}}{{\\textbf{{Total for {month}:}}}} & "
-            f"\\textbf{{{month_total_hours:.2f} hours}} & \\textbf{{{month_total_salary:.2f}}} \\\\\\\\\n"
+            f"\\textbf{{{month_total_hours:.2f} hours}} & \\textbf{{{month_total_salary:.2f}}} \\\\ \n"
             "\\hline\n"
             )
 
@@ -357,23 +418,75 @@ class MainWindow(QMainWindow):
         pixmap = QPixmap(image_path)
         self.pdf_preview_label.setPixmap(pixmap)
 
-    def save_files(self):
-        # Save CSV
+    def save_csv(self):
+        """Save only the CSV file."""
+        total_salary = sum(entry['entry_salary'] for entry in self.filtered_entries)
+        total_hours = sum((entry['end_time'].hour - entry['start_time'].hour) +
+                        (entry['end_time'].minute - entry['start_time'].minute) / 60
+                        for entry in self.filtered_entries)
         csv_data = write_csv(self.filtered_entries, self.salary_per_hour)
-        save_csv_file(csv_data)
+        csv_data += f"\nTotal Hours,,,{total_hours:.2f},Salary Per Hour,,,{self.salary_per_hour},Total Salary,,,{total_salary}"
+        
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "output.csv", "CSV Files (*.csv)")
+        if file_path:
+            with open(file_path, 'w') as file:
+                file.write(csv_data)
+            print(f"CSV file saved successfully to {file_path}")
 
-        # Save LaTeX
+    def save_tex(self):
+        """Save only the LaTeX file."""
         total_salary = sum(entry['entry_salary'] for entry in self.filtered_entries)
         total_hours = sum((entry['end_time'].hour - entry['start_time'].hour) +
                         (entry['end_time'].minute - entry['start_time'].minute) / 60
                         for entry in self.filtered_entries)
         latex_table = self.generate_latex_table(self.filtered_entries, total_salary, total_hours, self.salary_per_hour)
-        with open("output.tex", "w") as file:
-            file.write(latex_table)
+        
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save TEX File", "output.tex", "LaTeX Files (*.tex)")
+        if file_path:
+            with open(file_path, "w") as file:
+                file.write(latex_table)
+            print(f"TEX file saved successfully to {file_path}")
 
-        # Save PDF
-        self.compile_latex_to_pdf(latex_table)
-        print("Files saved successfully.")
+    def save_pdf(self):
+        """Save only the PDF file."""
+        total_salary = sum(entry['entry_salary'] for entry in self.filtered_entries)
+        total_hours = sum((entry['end_time'].hour - entry['start_time'].hour) +
+                        (entry['end_time'].minute - entry['start_time'].minute) / 60
+                        for entry in self.filtered_entries)
+        latex_table = self.generate_latex_table(self.filtered_entries, total_salary, total_hours, self.salary_per_hour)
+        
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save PDF File", "output.pdf", "PDF Files (*.pdf)")
+        if file_path:
+            # Save LaTeX to a temporary file
+            temp_dir = "temp"
+            os.makedirs(temp_dir, exist_ok=True)
+            tex_file = os.path.join(temp_dir, "temp_output.tex")
+            
+            with open(tex_file, "w") as file:
+                file.write(latex_table)
+            
+            # Compile LaTeX to PDF
+            try:
+                pdf_temp_file = os.path.join(temp_dir, "temp_output.pdf")
+                run(["pdflatex", "-output-directory", temp_dir, tex_file], check=True)
+                
+                # Copy the compiled PDF to the user's chosen location
+                import shutil
+                shutil.copy(pdf_temp_file, file_path)
+                print(f"PDF file saved successfully to {file_path}")
+            except CalledProcessError as e:
+                print(f"Error compiling LaTeX to PDF: {e}")
+
+    def save_all(self):
+        """Save CSV, LaTeX, and PDF files."""
+        self.save_csv()
+        self.save_tex()
+        self.save_pdf()
+        print("All files saved successfully.")
+
+    def save_files(self):
+        """Legacy method - calls save_all for backward compatibility."""
+        self.save_all()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

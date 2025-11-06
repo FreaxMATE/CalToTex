@@ -172,3 +172,13 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Configuration file with sensitive information
+config.txt
+
+# Temporary files and outputs
+temp/
+output.tex
+output.pdf
+*.aux
+*.log
